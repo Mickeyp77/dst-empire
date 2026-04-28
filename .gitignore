@@ -1,0 +1,27 @@
+# Dependencies
+/vendor/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Storage / uploads
+/storage/
+
+# Test artifacts
+/.phpunit.result.cache
+/coverage/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+
+# Composer lock is committed for libraries, not apps — include if desired
+# composer.lock
