@@ -120,6 +120,19 @@ Full 5-minute quickstart: [docs/QUICKSTART.md](docs/QUICKSTART.md)
 
 ---
 
+## Contributing: Guided Walkthroughs
+
+New here? Install the [VS Code CodeTour extension](https://marketplace.visualstudio.com/items?itemName=vsls-contrib.codetour) and open the `.tours/` folder for interactive guided walkthroughs:
+
+- **[01-onboarding.tour](.tours/01-onboarding.tour)** — First-time contributor intro. Project structure, playbook contract, how to run examples.
+- **[02-engine-deep-dive.tour](.tours/02-engine-deep-dive.tour)** — Write a new playbook. Reference implementations, aggregation, test patterns.
+- **[03-compliance-architecture.tour](.tours/03-compliance-architecture.tour)** — Compliance modules. BOI filing, calendar scheduling, law monitoring, amendment drafting.
+- **[04-document-pipeline.tour](.tours/04-document-pipeline.tour)** — Document generation. Template rendering, format conversion, attorney package compilation.
+
+Each tour is a JSON file with step-by-step code navigation + commentary.
+
+---
+
 ## Documentation
 
 | Doc | Contents |

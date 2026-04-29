@@ -1,0 +1,86 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Compliance Architecture: Building the Continuous Compliance Engine",
+  "description": "For contributors working on compliance modules: BOI filing, calendar scheduling, law monitoring, and amendment drafting.",
+  "ref": "main",
+  "steps": [
+    {
+      "title": "Compliance module overview",
+      "file": "src/Empire/BOI/Filer.php",
+      "line": 1,
+      "description": "DST Empire has four compliance pillars: BOI filing (FinCEN BOIR), calendar scheduling (recurring deadlines), law monitoring (RSS + LLM classification), and amendment drafting (auto-generated doc updates). This tour covers all four."
+    },
+    {
+      "title": "BOI filing: FinCEN CTA",
+      "file": "src/Empire/BOI/Filer.php",
+      "line": 5,
+      "description": "Corporate Transparency Act (CTA), effective 2024-01-01. New entities file FinCEN BOI within 30 days of formation. Existing entities had until 2025-01-01 (past). Any owner change = re-file within 30 days. THIS CLASS DOES NOT SUBMIT — generation only. Manual filing at boiefiling.fincen.gov."
+    },
+    {
+      "title": "BOIR filing type codes",
+      "file": "src/Empire/BOI/Filer.php",
+      "line": 29,
+      "description": "Filer supports four filing types: INITIAL (new entity), CORRECTION (fix prior report), UPDATE (owner changed), NEWLY_EXEMPT (entity became exempt). Use the right code to ensure FinCEN processes correctly. Each has different deadline (30 days from event)."
+    },
+    {
+      "title": "BOIR document types",
+      "file": "src/Empire/BOI/Filer.php",
+      "line": 34,
+      "description": "Filer supports four ID doc types: US_PASSPORT, STATE_DL, STATE_ID, FOREIGN_PASSPORT. FinCEN validates these against owner identity. If owner has only foreign ID, use FOREIGN_PASSPORT. Ensures filing won't be rejected."
+    },
+    {
+      "title": "Compliance Calendar Engine",
+      "file": "src/Empire/Compliance/CalendarEngine.php",
+      "line": 1,
+      "description": "CalendarEngine scaffolds, maintains, and surfaces compliance tasks per entity. Consumes compliance_calendar table (migration 077). Parallel to Filer: Filer drives BOI logic, CalendarEngine owns the recurring calendar scaffold."
+    },
+    {
+      "title": "Penalty exposure: daily fines lookup",
+      "file": "src/Empire/Compliance/CalendarEngine.php",
+      "line": 29,
+      "description": "CalendarEngine tracks daily penalty exposure per task type. BOI update = $500/day (CTA §5336(h)(3)(A), up to $10k). Franchise tax ~$50/day. FBAR = $10k per violation (one-time, not daily). Used to prioritize overdue items and alert clients."
+    },
+    {
+      "title": "Default task scaffold",
+      "file": "src/Empire/Compliance/CalendarEngine.php",
+      "line": 45,
+      "description": "When an entity is created, CalendarEngine auto-seeds tasks: BOI update (once), license_renewal (annual), insurance_renewal (annual). Entity type determines additional tasks (e.g., captive insurance gets captive_filing annual). Recurrence rules: 'once', 'annual', 'quarterly', 'monthly'."
+    },
+    {
+      "title": "RecurrenceCalculator: state-specific schedules",
+      "file": "src/Empire/Compliance/RecurrenceCalculator.php",
+      "line": 1,
+      "description": "RecurrenceCalculator computes next-due dates per state + task type. DE annual reports due 6 months after formation (anniversary). TX franchise tax due 4/15. Federal BOI updates always due within 30 days of owner change. State-aware + deterministic."
+    },
+    {
+      "title": "Law Monitor: RSS source polling",
+      "file": "src/Empire/LawMonitor/SourcePoller.php",
+      "line": 1,
+      "description": "SourcePoller ingests RSS feeds (Congress bills, state legislature, IRS notices) into law_monitor_events table. Runs daily via cron. You plug in your feed URLs; Poller handles polling, dedup, and storage. Zero configuration — just feed URLs."
+    },
+    {
+      "title": "Law Monitor: LLM-based classification",
+      "file": "src/Empire/LawMonitor/Classifier.php",
+      "line": 1,
+      "description": "Classifier analyzes each event (bill, regulation) and tags impact: 'entity_formation', 'tax_strategy', 'liability', 'compliance_deadline', 'minor_update', 'no_impact'. Uses Claude API to understand legislative language (optional, disable for fully deterministic mode)."
+    },
+    {
+      "title": "Law Monitor: Amendment auto-drafting",
+      "file": "src/Empire/LawMonitor/AmendmentDrafter.php",
+      "line": 1,
+      "description": "When a law changes and impacts a client's structure, AmendmentDrafter auto-generates a remedial doc (e.g. 'QSBS holding period extended to 6 years — recommend updating stock purchase agreement'). Surfaces via API; human attorney reviews + client consents."
+    },
+    {
+      "title": "Integration: Compliance + Playbooks",
+      "file": "docs/ARCHITECTURE.md",
+      "line": 1,
+      "description": "Compliance modules integrate with PlaybookRegistry: when a playbook's law reference changes (e.g. §1202 exclusion expanded), Classifier detects it, AmendmentDrafter suggests updates, CalendarEngine adds deadline to calendar. Full feedback loop."
+    },
+    {
+      "title": "Next: explore migrations 077+",
+      "file": "migrations/077_compliance_calendar.sql",
+      "line": 1,
+      "description": "Migration 077 creates compliance_calendar, law_monitor_events, law_monitor_impacts, doc_renders tables. Study this schema to understand the compliance data model. CalendarEngine, SourcePoller, and Classifier all depend on this."
+    }
+  ]
+}

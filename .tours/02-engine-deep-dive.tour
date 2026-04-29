@@ -1,0 +1,92 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Engine Deep Dive: Writing a New Playbook",
+  "description": "For contributors writing a new tax structuring playbook. Walk through reference implementations, aggregation, and test patterns.",
+  "ref": "main",
+  "steps": [
+    {
+      "title": "Start: S-Corp Election reference implementation",
+      "file": "src/Empire/Playbooks/SCorpElectionPlaybook.php",
+      "line": 1,
+      "description": "SCorpElectionPlaybook is the canonical reference. It's simple, deterministic, and well-documented. Read the full class to understand how a playbook models tax savings, enforces prerequisites, and communicates risk."
+    },
+    {
+      "title": "Tax mechanics: SE tax calculation",
+      "file": "src/Empire/Playbooks/SCorpElectionPlaybook.php",
+      "line": 8,
+      "description": "The core insight: S-Corp election splits profit into W-2 salary (subject to payroll taxes 15.3% up to SS wage base $176,100, then 2.9% Medicare) and distributions (no SE tax). Savings = SE tax avoided on distributions, minus CPA + payroll cost."
+    },
+    {
+      "title": "Conservative reasonable-comp benchmark",
+      "file": "src/Empire/Playbooks/SCorpElectionPlaybook.php",
+      "line": 15,
+      "description": "The playbook uses 50% of net income as a safe-harbor W-2 salary proxy (conservative). Real implementation would need facts-and-circumstances per Rev. Rul. 74-44 and Watson v. Commissioner. See gotchas_md in evaluate() for disclosure."
+    },
+    {
+      "title": "Eligibility gate: §1361 requirements",
+      "file": "src/Empire/Playbooks/SCorpElectionPlaybook.php",
+      "line": 20,
+      "description": "§1361 has hard eligibility rules: domestic corp, ≤ 100 shareholders, one class of stock, no non-resident aliens, no C-Corp shareholders. These are enforced in applies() — if ANY gate fails, applies returns false and the playbook doesn't evaluate."
+    },
+    {
+      "title": "Multi-state complexity: QSBS §1202",
+      "file": "src/Empire/Playbooks/QSBS1202Playbook.php",
+      "line": 1,
+      "description": "QSBS §1202 is more complex: domestic C-Corp only, aggregate assets ≤ $50M at issuance, 5+ year holding period, 80% active business test, PLUS excluded industry verticals. This demonstrates how playbooks handle multi-part eligibility."
+    },
+    {
+      "title": "Excluded verticals: professional services + more",
+      "file": "src/Empire/Playbooks/QSBS1202Playbook.php",
+      "line": 48,
+      "description": "§1202(e)(3) disqualifies entire industries: healthcare, law, accounting, financial services, agriculture, mining, sports. The playbook checks industry_vertical against EXCLUDED_VERTICALS array and rejects if matched. Read the full array to see the list."
+    },
+    {
+      "title": "Stacking and family member multiplier",
+      "file": "src/Empire/Playbooks/QSBS1202Playbook.php",
+      "line": 25,
+      "description": "QSBS stacks per taxpayer + per trust. Mickey + Sabrina + 2 kids + DAPT = 5 entities × $10M = $50M total exclusion. The playbook surfaces this in next_actions so the client understands the portfolio opportunity."
+    },
+    {
+      "title": "Portfolio Synthesizer: aggregating all playbooks",
+      "file": "src/Empire/Synthesis/PortfolioSynthesizer.php",
+      "line": 1,
+      "description": "PortfolioSynthesizer is the master orchestrator. It runs PlaybookRegistry across all brands in the portfolio, then aggregates results into org chart, cash flow model, and 5-year projections. Zero LLM calls — pure deterministic synthesis."
+    },
+    {
+      "title": "Synthesis aggregation API",
+      "file": "src/Empire/Synthesis/PortfolioSynthesizer.php",
+      "line": 44,
+      "description": "synthesize() returns a single JSON-serializable array with all brands, all playbook results, org chart structure, cash flow waterfall (Tax Leakage model), and 5-year projections. Use this to render dashboards and client reports."
+    },
+    {
+      "title": "Database dependencies",
+      "file": "src/Empire/Synthesis/PortfolioSynthesizer.php",
+      "line": 13,
+      "description": "PortfolioSynthesizer depends on schema from migrations 072, 073, 074, 077: empire_brand_intake (main table), empire_portfolio_context (owner meta), compliance_calendar. Before running synthesis, ensure migrations are applied."
+    },
+    {
+      "title": "Playbooks catalog reference",
+      "file": "docs/PLAYBOOKS.md",
+      "line": 1,
+      "description": "docs/PLAYBOOKS.md is the authoritative catalog. Each playbook has: name, IRC section, category (tax/liability/sale/estate/intercompany), applicability rules, savings model, risk level, citations. Use this to understand the full playbook set."
+    },
+    {
+      "title": "Test pattern: SCorpElectionTest",
+      "file": "tests/Empire/Playbooks/SCorpElectionTest.php",
+      "line": 1,
+      "description": "Tests follow a standard pattern: setUp() instantiates the playbook, testApplies() verifies preconditions, testEvaluatePositive() checks high-savings scenarios, testEvaluateNegative() checks edge cases. Copy this pattern for new playbooks."
+    },
+    {
+      "title": "Test data: realistic intakes",
+      "file": "tests/Empire/Playbooks/SCorpElectionTest.php",
+      "line": 20,
+      "description": "Tests use realistic intake arrays with multiple scenarios: high-income sole prop (strong S-Corp candidate), low-income (no benefit), no W-2 wages (ineligible). Each scenario validates applies() and evaluate() independently."
+    },
+    {
+      "title": "Ready to implement?",
+      "file": "CONTRIBUTING.md",
+      "line": 1,
+      "description": "To write a new playbook: (1) read AbstractPlaybook contract, (2) study a reference impl (S-Corp or QSBS), (3) extend AbstractPlaybook, (4) implement all abstract methods, (5) write tests per SCorpElectionTest pattern, (6) register in PlaybookRegistry, (7) add entry to docs/PLAYBOOKS.md."
+    }
+  ]
+}

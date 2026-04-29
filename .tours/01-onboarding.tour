@@ -1,0 +1,80 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Onboarding: DST Empire 101",
+  "description": "First-time contributor walkthrough. Learn the project structure, core playbook architecture, and how to run examples.",
+  "ref": "main",
+  "steps": [
+    {
+      "title": "Welcome to DST Empire",
+      "file": "README.md",
+      "line": 1,
+      "description": "Welcome! DST Empire is a free/open-source portfolio analysis engine for entity formation, tax structuring, and continuous compliance. This tour walks you through the codebase architecture."
+    },
+    {
+      "title": "Project goals and features",
+      "file": "README.md",
+      "line": 62,
+      "description": "The engine delivers 12 deterministic tax playbooks (S-Corp, QSBS, DAPT, etc.), portfolio synthesis, compliance calendar, BOI filing, and document rendering — all without LLM calls. The premium features (templates, feeds, attorney network) live on dstempire.com."
+    },
+    {
+      "title": "Dependencies: composer.json",
+      "file": "composer.json",
+      "line": 1,
+      "description": "The project requires PHP 8.1+ and PHPUnit for testing. It's a library (PSR-4 namespace Mnmsos\\Empire\\), with zero external runtime dependencies — intentional design for simplicity and auditability."
+    },
+    {
+      "title": "The AbstractPlaybook contract",
+      "file": "src/Empire/Playbooks/AbstractPlaybook.php",
+      "line": 19,
+      "description": "Every playbook extends AbstractPlaybook. This base class defines the contract: getId(), getName(), applies(), evaluate(). The evaluate() method returns structured tax savings, risk level, citations, prerequisites, and next actions."
+    },
+    {
+      "title": "Playbook return shape",
+      "file": "src/Empire/Playbooks/AbstractPlaybook.php",
+      "line": 63,
+      "description": "Each playbook's evaluate() returns a standardized array with applies, applicability_score, estimated_savings_y1_usd, risk_level, audit_visibility, prerequisites, rationale, gotchas, citations, docs_required, and next_actions. This contract enables consistent UI rendering."
+    },
+    {
+      "title": "PlaybookRegistry: the entry point",
+      "file": "src/Empire/Playbooks/PlaybookRegistry.php",
+      "line": 1,
+      "description": "PlaybookRegistry is the central hub. It's a singleton that holds all 12 playbooks. Call getInstance(), then runAll() or runAllSorted() to evaluate all playbooks for a given intake + portfolio context."
+    },
+    {
+      "title": "Registry auto-registers all 12 playbooks",
+      "file": "src/Empire/Playbooks/PlaybookRegistry.php",
+      "line": 29,
+      "description": "The constructor wires up all 12 playbooks: SCorpElection, QSBS1202, QBI199A, RDCredit41, IPCoSeparation, CaptiveInsurance831b, MgmtFeeTransferPricing, ChargingOrderProtection, FLPValuationDiscount, DAPTDomesticAsset, CostSegregation, and Solo401kMax."
+    },
+    {
+      "title": "Working example: run all playbooks",
+      "file": "examples/01_run_playbooks.php",
+      "line": 1,
+      "description": "Run: php examples/01_run_playbooks.php. This is the canonical walkthrough. Feed an intake array (brand, revenue, industry, aggression tier, etc.) to PlaybookRegistry::getInstance()->runAll(), and you get back all playbook results keyed by ID."
+    },
+    {
+      "title": "Example: intake data shape",
+      "file": "examples/01_run_playbooks.php",
+      "line": 17,
+      "description": "The intake array describes a single brand: revenue, EBITDA, industry, employee count, entity type, jurisdiction, sale horizon. This is the engine's input. See docs/EXAMPLES.md for the full shape."
+    },
+    {
+      "title": "Next: run a playbook example",
+      "file": "examples/01_run_playbooks.php",
+      "line": 46,
+      "description": "After setting up intake and portfolioCtx, call $registry->runAllSorted($intake, $portfolioCtx). You get an array of results sorted by applicability + savings. Loop through and print applicability, savings, and risk level for each playbook."
+    },
+    {
+      "title": "Test infrastructure",
+      "file": "phpunit.xml.dist",
+      "line": 1,
+      "description": "Run: composer test (or phpunit directly). Tests live in tests/ and use the PSR-4 namespace Mnmsos\\Empire\\Tests\\. Coverage is growing; new playbooks should include a playbook test."
+    },
+    {
+      "title": "You're ready! Next steps",
+      "file": "CONTRIBUTING.md",
+      "line": 1,
+      "description": "See CONTRIBUTING.md for contributor guidelines. To write a new playbook: extend AbstractPlaybook, override all abstract methods, add a test, register in PlaybookRegistry. For docs, see docs/PLAYBOOKS.md (catalog) and docs/ARCHITECTURE.md (system design)."
+    }
+  ]
+}

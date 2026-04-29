@@ -1,0 +1,92 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Document Pipeline: Rendering & Attorney Package Generation",
+  "description": "For contributors working on document generation. Learn template rendering, format conversion, cover memo auto-generation, and package compilation.",
+  "ref": "main",
+  "steps": [
+    {
+      "title": "Document pipeline overview",
+      "file": "src/Empire/Docs/TemplateRenderer.php",
+      "line": 1,
+      "description": "The document pipeline has 4 layers: TemplateRenderer (variable substitution), PandocConverter (markdown→docx/pdf), CoverMemoGenerator (auto attorney memo), AttorneyPackageBuilder (full package compilation). Start here to understand the flow."
+    },
+    {
+      "title": "Template syntax: mustache-like",
+      "file": "src/Empire/Docs/TemplateRenderer.php",
+      "line": 5,
+      "description": "TemplateRenderer supports: {{ var_name }} (simple), {{ var_name | default('fallback') }} (with default), {{#if has_partner}}...{{/if}} (conditional), {{#each beneficial_owners}}...{{/each}} (loop). No external template library — lightweight, deterministic, auditable."
+    },
+    {
+      "title": "Conditional sections",
+      "file": "src/Empire/Docs/TemplateRenderer.php",
+      "line": 8,
+      "description": "Use {{#if field}}...{{/if}} to render sections only if a variable is truthy. Example: {{#if has_spouse}}Spouse Deferral: {{spouse_name}}{{/if}}. Useful for optional sections (e.g. multi-member vs single-member LLC language)."
+    },
+    {
+      "title": "Loop syntax: iterating arrays",
+      "file": "src/Empire/Docs/TemplateRenderer.php",
+      "line": 9,
+      "description": "Use {{#each array_var}}...{{/each}} to iterate. Inside the loop, {{ field }} refers to current item's keys. Example: {{#each beneficial_owners}}Owner: {{name}}, SSN: {{ssn}}{{/each}}. Records missing_vars if array items lack required keys."
+    },
+    {
+      "title": "Render API and audit trail",
+      "file": "src/Empire/Docs/TemplateRenderer.php",
+      "line": 48,
+      "description": "Call render($templateId, $variables, $intakeId). Returns: rendered_md (filled markdown), content_hash (SHA-256), missing_vars (list of absent required keys), render_id (doc_renders.id for audit trail). Every render is logged to doc_renders table."
+    },
+    {
+      "title": "PandocConverter: format conversion",
+      "file": "src/Empire/Docs/PandocConverter.php",
+      "line": 1,
+      "description": "PandocConverter wraps Pandoc CLI (you must have pandoc installed). Converts markdown (from TemplateRenderer) to DOCX, PDF, or other formats. Deterministic + deterministically testable."
+    },
+    {
+      "title": "Pandoc CLI wrapper",
+      "file": "src/Empire/Docs/PandocConverter.php",
+      "line": 30,
+      "description": "convert($inputMd, $fromFormat, $toFormat) takes rendered markdown and calls pandoc with security constraints: --sandbox, no writes outside output dir, no shell expansion. Returns binary (DOCX/PDF) or error."
+    },
+    {
+      "title": "Security: sandboxing and validation",
+      "file": "src/Empire/Docs/PandocConverter.php",
+      "line": 45,
+      "description": "All Pandoc calls are sandboxed (--sandbox flag), output paths are validated, no shell metacharacters allowed. Prevents arbitrary code execution and path traversal. Before modifying this, read the security model."
+    },
+    {
+      "title": "CoverMemoGenerator: attorney summary",
+      "file": "src/Empire/Docs/CoverMemoGenerator.php",
+      "line": 1,
+      "description": "CoverMemoGenerator auto-generates a cover memo (attorney letter) summarizing the engagement, recommended structures, tax savings estimate, next actions, and disclaimers. Template-driven; output is markdown for signing."
+    },
+    {
+      "title": "Cover memo structure",
+      "file": "src/Empire/Docs/CoverMemoGenerator.php",
+      "line": 20,
+      "description": "Memo includes: engagement letter header, client summary (brand name, revenue, structure), recommended playbooks (those with applies=true), estimated tax savings (aggregate Y1 + 5Y), risk disclosure, next steps, attorney signature block. All data-driven."
+    },
+    {
+      "title": "AttorneyPackageBuilder: full compilation",
+      "file": "src/Empire/Docs/AttorneyPackageBuilder.php",
+      "line": 1,
+      "description": "AttorneyPackageBuilder orchestrates the full pipeline: PlaybookRegistry evaluates client structure, each applicable playbook has a doc template, TemplateRenderer fills templates, PandocConverter generates DOCX/PDF, CoverMemoGenerator wraps them, and all are bundled into a ZIP package."
+    },
+    {
+      "title": "Package compilation: multi-doc bundling",
+      "file": "src/Empire/Docs/AttorneyPackageBuilder.php",
+      "line": 30,
+      "description": "build($intakeId, $outputFormat='pdf') returns a single ZIP containing: COVER_MEMO.pdf, S-CORP-ELECTION.pdf, QSBS-STRATEGY.pdf, BOI-FILING-CHECKLIST.pdf, etc. One package per client, attorney-ready, client-signable."
+    },
+    {
+      "title": "SeedTemplateLoader: template repository",
+      "file": "src/Empire/Docs/SeedTemplateLoader.php",
+      "line": 1,
+      "description": "SeedTemplateLoader pre-populates doc_templates table with baseline templates for each playbook (optional). Call load() in a migration or setup script. Seeded templates are a starting point; dstempire.com provides premium, attorney-reviewed variants."
+    },
+    {
+      "title": "Next: explore doc rendering flow",
+      "file": "examples/03_render_template.php",
+      "line": 1,
+      "description": "Run: php examples/03_render_template.php. This example walks through: create a template, pass variables, render, convert to PDF, verify output. Full end-to-end document pipeline in ~50 lines."
+    }
+  ]
+}
